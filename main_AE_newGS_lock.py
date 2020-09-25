@@ -12,8 +12,8 @@ from keras.callbacks import EarlyStopping
 
 output_size=5 #參數大小
 input_size = 8192 #輸入Feature大小
-ClassSampleNum = 250 #每個類別的樣本數
-TestSetNum = 100
+ClassSampleNum = 150 #每個類別的樣本數
+TestSetNum = 50
 f_min = 150
 f_max = 70000
 Resolution = 140000 / 16384
@@ -30,7 +30,7 @@ def getSample(path):
 			#one_hot=np.zeros(output_size)
 			#one_hot[int(line[0])]=1
 			
-			label.append(int(line[0]))
+			# label.append(int(line[0]))
 			raw = []
 			for i in line[0::]:
 				num=float(i)
@@ -43,7 +43,7 @@ def getSample(path):
 			input.append(raw)
 	return np.array(input),np.array(label)
 
-x,y = getSample("sample_clear.csv")
+x,y = getSample("sample_5_0825.csv")
 print(x.shape)
 print(y.shape)  
 
@@ -170,7 +170,7 @@ Nodes = [10,9,8,7,6,5,4,3,2,1]
 Layers = [2,1,0]
 LRs = [0.001,0.01]
 Activations = ['relu','tanh','sigmoid']
-Loss_funcs = ['mae']
+Loss_funcs = ['mae','mse']
 # GS parameter:layer zoom lr activation loss_func
 for Node in Nodes:
     for Layer in Layers:
@@ -187,7 +187,7 @@ for Node in Nodes:
                         print(model.summary())
                         adam = Adam(lr=LR)
                         model.compile(optimizer='adam', loss=Loss_func)
-                        ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=50)
+                        ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=100)
                         history = model.fit(x[j*ClassSampleNum:((j+1)*ClassSampleNum)-TestSetNum-1,:], x[j*ClassSampleNum:((j+1)*ClassSampleNum)-TestSetNum-1,:], 
                         epochs=600, batch_size=600, shuffle=True, callbacks=([ES_Acc]), 
                         validation_data=(x[(j*ClassSampleNum)+(ClassSampleNum-TestSetNum):(j+1)*ClassSampleNum-1], x[(j*ClassSampleNum)+(ClassSampleNum-TestSetNum):(j+1)*ClassSampleNum-1]))
@@ -233,9 +233,9 @@ for Node in Nodes:
                     for i in range(output_size):
                         plt.plot(evaluate_result[i])
                     plt.grid(color='gray', linestyle='-', linewidth=0.5)
-                    plt.xlabel('  I-7p                I-8p            Sam-A7          LG              I-8p')
+                    plt.xlabel('  I-7p               Sam_N9          Sam-A51         ASUS             Sony')
                     plt.ylabel('loss')
-                    plt.legend(['Model_I-7p','Model_I-8p','Model_Sam-A7','Model_LG','Model_I-XR','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
+                    plt.legend(['Model_I-7p','Model_Sam_N9','Model_Sam-A51','Model_ASUS','Model_Sony','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
                     new_ticks = np.linspace(0, output_size*TestSetNum, output_size+1)
                     plt.xticks(new_ticks)
                     plt.title("Layer:" +repr(Layer)+ "Node:" +repr(Node)+ "LR:"+ repr(LR)+ "Acti.:"+ repr(Activation)+ "Loss_func:"+ repr(Loss_func))

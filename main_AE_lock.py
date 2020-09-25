@@ -13,10 +13,12 @@ from hyperopt.mongoexp import MongoTrials
 
 output_size=5 #參數大小
 input_size = 8192 #輸入Feature大小
-ClassSampleNum = 150 #每個類別的樣本數
+ClassSampleNum = 300 #每個類別的樣本數
 verifSetNum = 75
 TestSetNum = 75
-isTraining = False
+isTraining = True
+Training_Data = "Train2.csv"
+Testing_Data = "Test.csv"
 
 space = {
 	'learning_rate': 0.014818872,
@@ -53,8 +55,8 @@ def getSample(path):
 			input.append(raw)
 	return np.array(input)
 
-x_train = getSample("Train.csv")
-x_test = getSample("Test.csv")
+x_train = getSample(Training_Data)
+x_test = getSample(Testing_Data)
 x_varif = []
 dd = []
 for i in range(output_size*(verifSetNum+TestSetNum)):
@@ -172,9 +174,9 @@ def AutoEncoder(params):
             print(model.summary())
             adam = Adam(lr=LR)
             model.compile(optimizer='adam', loss=Loss_func)
-            ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=50)
+            ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=200)
             history = model.fit(x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], 
-            epochs=800, batch_size=int(batch_size), shuffle=True, callbacks=([ES_Acc]), 
+            epochs=3000, batch_size=int(batch_size), shuffle=True, callbacks=([ES_Acc]), 
             validation_data=(x_varif[(j*TestSetNum):(j+1)*TestSetNum-1], x_varif[(j*TestSetNum):(j+1)*TestSetNum-1])) 
             model.save('./AE_Model/model_'+repr(j)+'/model_'+repr(j)+'.h5')
 
@@ -219,6 +221,7 @@ def AutoEncoder(params):
         # Train_Eval_loss.append(cc)
         
     ##save the loss of evaluate to csv
+    evaluate_history.extend(Varif_Eval_loss)
     evaluate_history.extend(Test_Eval_loss)
     with open('GS_AE_0807_evaluateResult.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -229,7 +232,7 @@ def AutoEncoder(params):
     for i in range(output_size):
         plt.plot(Test_Eval_loss[i])
     plt.grid(color='gray', linestyle='-', linewidth=0.5)
-    plt.xlabel('-   I-7p        I-8p       Sam-A7      Sam-A7-2      Sony  -')
+    plt.xlabel('-   I-7p           I-8p          Sam-A7         Sam-A7-2        Sony  -')
     plt.ylabel('loss')
     plt.legend(['Model_I-7p','Model_I-8p','Model_Sam-A7','Model_Sam-A7-2','Model_Sony','Model_Sony','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
     plt.xticks(np.arange(7)*75, ['1', '75  1    ', '75  1    ', '75  1    ', '75  1    ', '75  '])
@@ -331,7 +334,7 @@ def AutoEncoder(params):
         TN_list.append("")
         FP_list.append("")
         FN_list.append("")
-        
+    print("Verification Result:")
     print("TPR : ", TPR_list)
     print("FPR : ", FPR_list)
     print("PRE : ", PRE_list)
@@ -361,7 +364,8 @@ def AutoEncoder(params):
         TN_list.append("")
         FP_list.append("")
         FN_list.append("")
-        
+    
+    print("Test Result")
     print("TPR : ", TPR_list)
     print("FPR : ", FPR_list)
     print("PRE : ", PRE_list)
@@ -378,16 +382,38 @@ def AutoEncoder(params):
         for i in range(len(TPR_list)):
             writer.writerow([TP_list[i],  TN_list[i], FP_list[i], FN_list[i], TPR_list[i], FPR_list[i], PRE_list[i], ACC_list[i]])
 
+    model_name = ['Model_I-7p','Model_I-8p','Model_Sam-A7','LG','Model_I-XR']
+    x_threshold = np.arange(output_size*verifSetNum)
 
-    Test_ACC_list = []
-    for Model_num in range(output_size):
-        TPR, FPR, PRE, ACC, TP, TN, FP, FN = Greedy(Test_Eval_loss, Model_num, TestSetNum, Threshold = Threshold_list[Model_num])
-        Test_ACC_list.append(ACC)
-    AVG_ACC = np.mean(Test_ACC_list)
-    print("list:", Test_ACC_list, "AVG ACC: ", AVG_ACC)
+    for i in range(output_size):
+        y_threshold = np.ones(output_size*verifSetNum)*Threshold_list[i]
+        plt.plot(Varif_Eval_loss[i])
+        plt.plot(x_threshold,y_threshold)
+        plt.title("AE model_"+repr(model_name[i][:]))
+        plt.grid(color='gray', linestyle='-', linewidth=0.5)
+        plt.xlabel('    I-7p               I-8p          Sam-A7           LG           I-XR')
+        plt.ylabel('loss')
+        # plt.legend(model_name)
+        new_ticks = np.linspace(0, output_size*verifSetNum, output_size+1)
+        plt.xticks(new_ticks)
+        plt.show()
+        
+    x_threshold = np.arange(output_size*TestSetNum)
+    for i in range(output_size):
+        y_threshold = np.ones(output_size*TestSetNum)*Threshold_list[i]
+        plt.plot(Test_Eval_loss[i])
+        plt.plot(x_threshold,y_threshold)
+        plt.title("AE model_"+repr(model_name[i][:]))
+        plt.grid(color='gray', linestyle='-', linewidth=0.5)
+        plt.xlabel('    I-7p               I-8p          Sam-A7           LG           I-XR')
+        plt.ylabel('loss')
+        # plt.legend(model_name)
+        new_ticks = np.linspace(0, output_size*TestSetNum, output_size+1)
+        plt.xticks(new_ticks)
+        plt.show()
     
     global step
     step = step + 1
-    return {'loss' : -AVG_ACC, 'status': STATUS_OK }
+    return 0
 
 AutoEncoder(space)

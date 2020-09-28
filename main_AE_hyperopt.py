@@ -11,7 +11,7 @@ from hyperopt.mongoexp import MongoTrials
 # from tensorflow.keras import backend as K
 # from tensorflow.python.keras import backend as K
 
-output_size=5 #參數大小
+output_size=2 #參數大小
 input_size = 8192 #輸入Feature大小
 ClassSampleNum = 150 #每個類別的樣本數
 verifSetNum = 75
@@ -42,8 +42,8 @@ def getSample(path):
 			input.append(raw)
 	return np.array(input)
 
-x_train = getSample("Train.csv")
-x_test = getSample("Test.csv")
+x_train = getSample("Train5.csv")
+x_test = getSample("Test5.csv")
 x_varif = []
 dd = []
 for i in range(output_size*(verifSetNum+TestSetNum)):
@@ -174,7 +174,7 @@ def AutoEncoder(params):
         print(model.summary())
         adam = Adam(lr=LR)
         model.compile(optimizer='adam', loss=Loss_func)
-        ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=50)
+        ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=100)
         history = model.fit(x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], 
         epochs=800, batch_size=int(batch_size), shuffle=True, callbacks=([ES_Acc]), 
         validation_data=(x_varif[(j*TestSetNum):(j+1)*TestSetNum-1], x_varif[(j*TestSetNum):(j+1)*TestSetNum-1])) 
@@ -215,10 +215,10 @@ def AutoEncoder(params):
         for j in range(output_size*verifSetNum):
             cc.append(class_model[i].evaluate(Eval_Varif_Data[j],Eval_Varif_Data[j]))
         Varif_Eval_loss.append(cc)
-        # c = []
-        # for j in range(output_size*verifSetNum):
-        #     cc.append(class_model[i].evaluate(Eval_Train_Data[j],Eval_Train_Data[j]))
-        # Train_Eval_loss.append(cc)
+        cc = []
+        for j in range(output_size*verifSetNum):
+            cc.append(class_model[i].evaluate(Eval_Train_Data[j],Eval_Train_Data[j]))
+        Train_Eval_loss.append(cc)
         
     ##save the loss of evaluate to csv
     evaluate_history.extend(Test_Eval_loss)
@@ -228,6 +228,7 @@ def AutoEncoder(params):
         writer.writerows(evaluate_history)
 
     #畫圖&存圖
+    #Test Set
     for i in range(output_size):
         plt.plot(Test_Eval_loss[i])
     plt.grid(color='gray', linestyle='-', linewidth=0.5)
@@ -237,6 +238,19 @@ def AutoEncoder(params):
     plt.xticks(np.arange(7)*75, ['1', '75  1    ', '75  1    ', '75  1    ', '75  1    ', '75  '])
     plt.title("Layer:" +repr(Layer)+ "Node:" +repr(Node)+ "LR:"+ repr(LR)+ "Acti.:"+ repr(Activation)+ "Loss_func:"+ repr(Loss_func))
     filename1 = '.\GS_Result/Set%03d.png' % (step)
+    plt.savefig(filename1)
+    plt.close()
+
+    #Train Set
+    for i in range(output_size):
+        plt.plot(Train_Eval_loss[i])
+    plt.grid(color='gray', linestyle='-', linewidth=0.5)
+    plt.xlabel('-   I-7p        I-8p       Sam-A7      Sam-A7-2      Sony  -')
+    plt.ylabel('loss')
+    plt.legend(['Model_I-7p','Model_I-8p','Model_Sam-A7','Model_Sam-A7-2','Model_Sony','Model_Sony','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
+    plt.xticks(np.arange(7)*150, ['1', '75  1    ', '75  1    ', '75  1    ', '75  1    ', '75  '])
+    plt.title("Layer:" +repr(Layer)+ "Node:" +repr(Node)+ "LR:"+ repr(LR)+ "Acti.:"+ repr(Activation)+ "Loss_func:"+ repr(Loss_func))
+    filename1 = '.\GS_Result/Train_Set%03d.png' % (step)
     plt.savefig(filename1)
     plt.close()
 

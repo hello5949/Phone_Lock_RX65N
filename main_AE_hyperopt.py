@@ -176,7 +176,7 @@ def AutoEncoder(params):
         model.compile(optimizer='adam', loss=Loss_func)
         ES_Acc = EarlyStopping(monitor='val_loss',min_delta=0, mode='min', verbose=1, patience=100)
         history = model.fit(x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], x_train[j*ClassSampleNum:((j+1)*ClassSampleNum)-1,:], 
-        epochs=800, batch_size=int(batch_size), shuffle=True, callbacks=([ES_Acc]), 
+        epochs=2000, batch_size=int(batch_size), shuffle=True, callbacks=([ES_Acc]), 
         validation_data=(x_varif[(j*TestSetNum):(j+1)*TestSetNum-1], x_varif[(j*TestSetNum):(j+1)*TestSetNum-1])) 
         model.save('./AE_Model/model_'+repr(j)+'/model_'+repr(j)+'.h5')
 
@@ -216,7 +216,7 @@ def AutoEncoder(params):
             cc.append(class_model[i].evaluate(Eval_Varif_Data[j],Eval_Varif_Data[j]))
         Varif_Eval_loss.append(cc)
         cc = []
-        for j in range(output_size*verifSetNum):
+        for j in range(output_size*ClassSampleNum):
             cc.append(class_model[i].evaluate(Eval_Train_Data[j],Eval_Train_Data[j]))
         Train_Eval_loss.append(cc)
         
@@ -232,10 +232,10 @@ def AutoEncoder(params):
     for i in range(output_size):
         plt.plot(Test_Eval_loss[i])
     plt.grid(color='gray', linestyle='-', linewidth=0.5)
-    plt.xlabel('-   I-7p        I-8p       Sam-A7      Sam-A7-2      Sony  -')
+    plt.xlabel('-   I-7p                                          I-8p  -')
     plt.ylabel('loss')
     plt.legend(['Model_I-7p','Model_I-8p','Model_Sam-A7','Model_Sam-A7-2','Model_Sony','Model_Sony','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
-    plt.xticks(np.arange(7)*75, ['1', '75  1    ', '75  1    ', '75  1    ', '75  1    ', '75  '])
+    plt.xticks(np.arange(3)*75, ['1', '75  1    ', '75  '])
     plt.title("Layer:" +repr(Layer)+ "Node:" +repr(Node)+ "LR:"+ repr(LR)+ "Acti.:"+ repr(Activation)+ "Loss_func:"+ repr(Loss_func))
     filename1 = '.\GS_Result/Set%03d.png' % (step)
     plt.savefig(filename1)
@@ -245,10 +245,10 @@ def AutoEncoder(params):
     for i in range(output_size):
         plt.plot(Train_Eval_loss[i])
     plt.grid(color='gray', linestyle='-', linewidth=0.5)
-    plt.xlabel('-   I-7p        I-8p       Sam-A7      Sam-A7-2      Sony  -')
+    plt.xlabel('-   I-7p                                          I-8p  -')
     plt.ylabel('loss')
     plt.legend(['Model_I-7p','Model_I-8p','Model_Sam-A7','Model_Sam-A7-2','Model_Sony','Model_Sony','Model_L6','Model_L7','Model_L8','Model_L9','Model_L10','Model_L11','Model_L12','Model_L13','Model_L14'])
-    plt.xticks(np.arange(7)*150, ['1', '75  1    ', '75  1    ', '75  1    ', '75  1    ', '75  '])
+    plt.xticks(np.arange(3)*150, ['1', '150  1    ', '150  '])
     plt.title("Layer:" +repr(Layer)+ "Node:" +repr(Node)+ "LR:"+ repr(LR)+ "Acti.:"+ repr(Activation)+ "Loss_func:"+ repr(Loss_func))
     filename1 = '.\GS_Result/Train_Set%03d.png' % (step)
     plt.savefig(filename1)
@@ -421,10 +421,10 @@ def AutoEncoder(params):
     
     global step
     step = step + 1
-    return {'loss' : -AVG_ACC, 'status': STATUS_OK }
+    return {'loss' : min(history.history['loss'])-AVG_ACC, 'status': STATUS_OK }
 
 trials = Trials()
-best = fmin(AutoEncoder, space, algo=tpe.suggest, trials=trials, max_evals= 250)
+best = fmin(AutoEncoder, space, algo=tpe.suggest, trials=trials, max_evals= 1000)
 
 print("\n")
 print("最佳參數:", best)
